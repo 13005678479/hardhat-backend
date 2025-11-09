@@ -1,0 +1,3 @@
+文件夹里没有 package.json需要运行初始化：npm init -y
+安装 Hardhat：npm install --save-dev hardhat
+项目初始化：npx hardhat init
