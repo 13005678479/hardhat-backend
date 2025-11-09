@@ -1,3 +1,228 @@
-文件夹里没有 package.json需要运行初始化：npm init -y
-安装 Hardhat：npm install --save-dev hardhat
-项目初始化：npx hardhat init
+# Hardhat 项目完整部署指南
+
+## 项目概述
+这是一个基于 Hardhat v2.22.18 的智能合约开发项目，包含一个 ERC20 代币合约。
+
+## 一、环境准备
+
+### 1.1 前置要求
+- Node.js (推荐 v16+)
+- npm 或 yarn
+- 以太坊钱包 (MetaMask)
+- Sepolia 测试网测试币
+
+### 1.2 项目初始化
+```bash
+# 创建项目目录
+mkdir hardhat-backend
+cd hardhat-backend
+
+# 初始化 npm 项目
+npm init -y
+
+# 安装 Hardhat
+npm install --save-dev hardhat@2.22.18
+
+# 初始化 Hardhat 项目
+npx hardhat init
+```
+
+## 二、项目结构
+
+```
+hardhat-backend/
+├── contracts/           # 智能合约目录
+│   └── MyToken.sol     # ERC20 代币合约
+├── scripts/            # 部署脚本目录
+│   └── deploy.js      # 部署脚本
+├── hardhat.config.js  # Hardhat 配置文件
+├── package.json       # 项目依赖配置
+└── note.txt          # 项目说明文档
+```
+
+## 三、核心文件说明
+
+### 3.1 package.json
+```json
+{
+  "name": "hardhat-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "hardhat": "^2.22.18"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.0"
+  }
+}
+```
+
+### 3.2 hardhat.config.js
+```javascript
+require("@nomicfoundation/hardhat-toolbox");
+
+module.exports = {
+  solidity: "0.8.22",
+  networks: {
+    sepolia: {
+      url: "https://sepolia.infura.io/v3/ea33fc8cbc4545d9ac08fba394c5046b",
+      accounts: ["4323d9e4f879855a70a3c19b732dde4d1bdb0829b0c30be408ad4b8e24e45e60"]
+    }
+  }
+};
+```
+
+### 3.3 MyToken.sol (智能合约)
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.22;
+
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract MyToken is ERC20 {
+    constructor() ERC20("MyToken", "MTK") {
+        _mint(msg.sender, 1000000 * 10**18); // 发行100万代币
+    }
+}
+```
+
+### 3.4 deploy.js (部署脚本)
+```javascript
+async function main() {
+  console.log("开始部署...");
+  
+  // 获取部署者账户
+  const [deployer] = await ethers.getSigners();
+  console.log("部署者地址:", deployer.address);
+  
+  // 检查余额
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log("余额:", ethers.utils.formatEther(balance), "ETH");
+  
+  if (balance < ethers.utils.parseEther("0.001")) {
+    console.log("余额不足，请获取测试币");
+    return;
+  }
+
+  // 部署 MyToken 合约
+  const MyToken = await ethers.getContractFactory("MyToken");
+  const myToken = await MyToken.deploy();
+  
+  await myToken.deployed();
+  
+  console.log("部署成功!");
+  console.log("合约地址:", myToken.address);
+}
+
+main().catch((error) => {
+  console.error("部署失败:", error);
+  process.exitCode = 1;
+});
+```
+
+## 四、部署流程
+
+### 4.1 安装依赖
+```bash
+npm install --legacy-peer-deps
+```
+
+**注意**: 由于版本兼容性问题，需要使用 `--legacy-peer-deps` 标志
+
+### 4.2 编译合约
+```bash
+npx hardhat compile
+```
+
+成功编译后会在 `artifacts/` 目录生成合约的 ABI 和字节码
+
+### 4.3 本地测试网络部署
+```bash
+# 启动本地 Hardhat 网络
+npx hardhat node
+
+# 在新终端窗口中部署到本地网络
+npx hardhat run scripts/deploy.js --network localhost
+```
+
+### 4.4 测试网络部署
+```bash
+# 部署到 Sepolia 测试网
+npx hardhat run scripts/deploy.js --network sepolia
+```
+
+## 五、部署配置说明
+
+### 5.1 网络配置
+- **Sepolia 测试网**: 使用 Infura 节点服务
+- **账户配置**: 使用提供的私钥进行身份验证
+- **RPC URL**: https://sepolia.infura.io/v3/ea33fc8cbc4545d9ac08fba394c5046b
+
+### 5.2 钱包信息
+- **钱包地址**: 0xf53a1d8e70560146c460150d7b3c6ac88218cb0e
+- **私钥**: 4323d9e4f879855a70a3c19b732dde4d1bdb0829b0c30be408ad4b8e24e45e60
+
+## 六、常见问题解决
+
+### 6.1 依赖安装问题
+```bash
+# 如果遇到依赖冲突，清除缓存重新安装
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
+```
+
+### 6.2 余额不足错误
+如果部署时提示余额不足：
+1. 前往 Sepolia 水龙头获取测试币
+2. 常用水龙头：https://sepoliafaucet.com/
+3. 至少需要 0.001 ETH 用于部署
+
+### 6.3 网络连接问题
+- 检查网络连接
+- 确认 Infura 项目 ID 有效
+- 验证私钥格式正确
+
+## 七、部署成功验证
+
+部署成功后，控制台会输出：
+```
+开始部署...
+部署者地址: 0xf53a1d8e70560146c460150d7b3c6ac88218cb0e
+余额: 0.1 ETH
+部署成功!
+合约地址: 0x...
+```
+
+可以在 https://sepolia.etherscan.io/ 查看部署的交易详情。
+
+## 八、后续操作
+
+### 8.1 合约交互
+部署成功后，可以通过以下方式与合约交互：
+- 使用 Hardhat Console
+- 编写交互脚本
+- 在前端应用中集成
+
+### 8.2 合约验证
+```bash
+# 验证合约源代码（可选）
+npx hardhat verify --network sepolia <合约地址>
+```
+
+## 九、注意事项
+
+1. **安全提醒**: 私钥已硬编码在配置文件中，仅用于测试目的
+2. **版本兼容**: 使用 Hardhat v2.22.18 确保稳定性
+3. **测试币**: 部署前确保有足够的 Sepolia 测试币
+4. **网络选择**: 测试阶段使用 Sepolia，生产环境使用主网
+
+---
+
+**项目创建时间**: 2025-11-09  
+**最后更新**: 2025-11-09  
+**技术栈**: Hardhat + Solidity + OpenZeppelin + Ethers.js

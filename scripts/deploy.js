@@ -1,33 +1,30 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const hre = require("hardhat");
-
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  console.log("开始部署...");
+  
+  // 获取部署者账户
+  const [deployer] = await ethers.getSigners();
+  console.log("部署者地址:", deployer.address);
+  
+  // 检查余额
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log("余额:", ethers.utils.formatEther(balance), "ETH");
+  
+  if (balance < ethers.utils.parseEther("0.001")) {
+    console.log("余额不足，请获取测试币");
+    return;
+  }
 
-  const lockedAmount = hre.ethers.parseEther("0.001");
-
-  const lock = await hre.ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
-
-  await lock.waitForDeployment();
-
-  console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
-  );
+  // 部署 MyToken 合约
+  const MyToken = await ethers.getContractFactory("MyToken");
+  const myToken = await MyToken.deploy();
+  
+  await myToken.deployed();
+  
+  console.log("部署成功!");
+  console.log("合约地址:", myToken.address);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
-  console.error(error);
+  console.error("部署失败:", error);
   process.exitCode = 1;
 });
