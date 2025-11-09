@@ -1,7 +1,7 @@
 # Hardhat 项目完整部署指南
 
 ## 项目概述
-这是一个基于 Hardhat v2.22.18 的智能合约开发项目，包含一个 ERC20 代币合约。
+这是一个基于 Hardhat v2.22.18 的智能合约开发项目，包含 ERC20 代币合约和 ERC721 NFT 合约。
 
 ## 一、环境准备
 
@@ -32,11 +32,18 @@ npx hardhat init
 ```
 hardhat-backend/
 ├── contracts/           # 智能合约目录
-│   └── MyToken.sol     # ERC20 代币合约
+│   ├── MyToken.sol     # ERC20 代币合约
+│   └── MyNFT.sol       # ERC721 NFT 合约
 ├── scripts/            # 部署脚本目录
-│   └── deploy.js      # 部署脚本
+│   ├── deploy.js       # ERC20 部署脚本
+│   └── deploy-nft.js   # NFT 部署脚本
+├── test/               # 测试文件目录
+│   ├── MyToken.test.js   # ERC20 合约测试
+│   ├── MyNFT.test.js     # ERC721 NFT 合约测试
+│   └── deployment.test.js # 部署脚本测试
 ├── hardhat.config.js  # Hardhat 配置文件
 ├── package.json       # 项目依赖配置
+├── .gitignore        # Git 忽略文件
 └── note.txt          # 项目说明文档
 ```
 
@@ -49,7 +56,13 @@ hardhat-backend/
   "version": "1.0.0",
   "scripts": {
     "test": "npx hardhat test",
-    "compile": "npx hardhat compile"
+    "test:token": "npx hardhat test test/MyToken.test.js",
+    "test:nft": "npx hardhat test test/MyNFT.test.js",
+    "test:deployment": "npx hardhat test test/deployment.test.js",
+    "test:coverage": "npx hardhat coverage",
+    "compile": "npx hardhat compile",
+    "deploy:token": "npx hardhat run scripts/deploy.js --network sepolia",
+    "deploy:nft": "npx hardhat run scripts/deploy-nft.js --network sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
@@ -214,15 +227,89 @@ npm install --legacy-peer-deps
 npx hardhat verify --network sepolia <合约地址>
 ```
 
-## 九、注意事项
+## 九、NFT 合约功能
+
+### 9.1 MyNFT 合约特性
+- **ERC721 标准**: 完全兼容 ERC721 标准
+- **元数据存储**: 支持 ERC721URIStorage 扩展
+- **铸造功能**: 支持付费铸造和免费铸造
+- **批量铸造**: 支持批量 NFT 铸造
+- **权限管理**: 使用 Ownable 进行权限控制
+- **提现功能**: 合约所有者可以提取铸造收入
+
+### 9.2 NFT 部署命令
+```bash
+# 编译合约
+npx hardhat compile
+
+# 部署 NFT 合约
+npx hardhat run scripts/deploy-nft.js --network sepolia
+
+# 测试 NFT 合约功能
+npm run test:nft
+```
+
+### 9.3 NFT 合约功能测试
+1. **基本信息查询**: 名称、符号、总供应量等
+2. **免费铸造**: 合约所有者可以免费铸造 NFT
+3. **付费铸造**: 用户支付 0.001 ETH 铸造 NFT
+4. **批量铸造**: 同时铸造多个 NFT
+5. **所有权验证**: 检查 NFT 所有者
+6. **URI 查询**: 获取 NFT 元数据 URI
+7. **转账功能**: NFT 在不同地址间转移
+
+### 9.4 NFT 元数据说明
+- **基础 URI**: 存储 NFT 元数据的基础 URL
+- **Token URI**: 每个 NFT 的唯一标识符
+- **推荐存储**: 使用 IPFS 或 Pinata 存储元数据
+
+## 十、测试命令
+
+### 10.1 测试脚本说明
+现在项目包含专门的测试目录，提供以下测试功能：
+
+- **`test/MyToken.test.js`**: ERC20 代币合约测试
+- **`test/MyNFT.test.js`**: ERC721 NFT 合约测试
+- **`test/deployment.test.js`**: 部署脚本测试
+
+### 10.2 测试命令
+```bash
+# 运行所有测试
+npm test
+
+# 单独运行 ERC20 代币测试
+npm run test:token
+
+# 单独运行 ERC721 NFT 测试
+npm run test:nft
+
+# 运行部署脚本测试
+npm run test:deployment
+
+# 生成测试覆盖率报告
+npm run test:coverage
+```
+
+### 10.3 部署命令
+```bash
+# 部署 ERC20 代币合约
+npm run deploy:token
+
+# 部署 ERC721 NFT 合约
+npm run deploy:nft
+```
+
+## 十一、注意事项
 
 1. **安全提醒**: 私钥已硬编码在配置文件中，仅用于测试目的
 2. **版本兼容**: 使用 Hardhat v2.22.18 确保稳定性
 3. **测试币**: 部署前确保有足够的 Sepolia 测试币
 4. **网络选择**: 测试阶段使用 Sepolia，生产环境使用主网
+5. **NFT 存储**: 生产环境建议使用 IPFS 存储 NFT 元数据
 
 ---
 
 **项目创建时间**: 2025-11-09  
 **最后更新**: 2025-11-09  
 **技术栈**: Hardhat + Solidity + OpenZeppelin + Ethers.js
+**合约类型**: ERC20 代币 + ERC721 NFT

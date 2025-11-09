@@ -5,7 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "npx hardhat test",
-    "compile": "npx hardhat compile"
+    "test:token": "npx hardhat test test/MyToken.test.js",
+    "test:nft": "npx hardhat test test/MyNFT.test.js",
+    "test:deployment": "npx hardhat test test/deployment.test.js",
+    "test:coverage": "npx hardhat coverage",
+    "compile": "npx hardhat compile",
+    "deploy:token": "npx hardhat run scripts/deploy.js --network sepolia",
+    "deploy:nft": "npx hardhat run scripts/deploy-nft.js --network sepolia"
   },
   "keywords": [],
   "author": "",
